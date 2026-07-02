@@ -1,0 +1,19 @@
+services:
+  mysqldb:
+    image: mysql:latest
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_DATABASE=app
+      - MYSQL_USER=app
+      - MYSQL_PASSWORD=pass
+  node:
+    image: node:alpine
+    ports:
+      - '9999:9999'
+    working_dir: /gate-simulator
+    volumes:
+      - ./artifacts/gate-simulator:/gate-simulator
+      - /gate-simulator/node_modules
+    command: sh -c "npm install && npm start"
