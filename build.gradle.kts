@@ -36,6 +36,7 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.36") //библиотека Lombok избавляет от написания шаблонного кода (геттеров, сеттеров, конструкторов, методов toString()). Можно просто поставить аннотацию (например, @Data), и всё генерируется автоматически во время компиляции.
     testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
 
+    testImplementation("com.zaxxer:HikariCP:7.0.2")
     testImplementation("mysql:mysql-connector-java:8.0.33") //JDBC-драйвер для базы данных MySQL - это «переводчик», который позволяет Java-коду общаться с базой данных MySQL. Без него тесты физически не смогут подключиться к контейнеру MySQL, чтобы проверить, сохранилась ли запись о покупке тура.
     testImplementation ("org.postgresql:postgresql:42.7.1") //JDBC-драйвер для базы данных PostgreSQL - это «переводчик», который позволяет Java-коду общаться с базой данных PostgreSQL. Без него тесты физически не смогут подключиться к контейнеру PostgreSQL, чтобы проверить, сохранилась ли запись о покупке тура.
     testImplementation("commons-dbutils:commons-dbutils:1.8.1") //библиотека-утилита от Apache для упрощения работы с SQL, заменяет тяжеловесные ORM (вроде Hibernate), берет на себя рутину: сама открывает и закрывает соединения с БД, выполняет SQL-запросы (SELECT * FROM payment_entity...) и автоматически превращает строчки из базы данных в удобные Java-объекты.

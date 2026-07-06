@@ -1,6 +1,7 @@
 package page;
 
 import com.codeborne.selenide.SelenideElement;
+import data.entity.CardInfo;
 
 import java.time.Duration;
 
@@ -8,6 +9,7 @@ import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.$;
 
 public class CardFormPage {
+
     private static final String REQUIRED_FIELD = "Поле обязательно для заполнения";
     private static final String INCORRECT_FORMAT = "Неверный формат";
     private static final String INCORRECT_CARD_DATE = "Неверно указан срок действия карты";
@@ -81,6 +83,16 @@ public class CardFormPage {
 
     public void submit() {
         submitButton.click();
+    }
+
+    public void makeOrder(CardInfo cardInfo) {
+        setCardNumber(cardInfo.getCardNumber());
+        setMonth(cardInfo.getMonth());
+        setYear(cardInfo.getYear());
+        setHolderName(cardInfo.getCardHolder());
+        setCvc(cardInfo.getCvc());
+
+        submit();
     }
 
     //сообщения о неверно-заполненных полях
@@ -195,5 +207,5 @@ public class CardFormPage {
         PageUtils.clearInput(nameField);
         PageUtils.clearInput(cvcField);
     }
-}
 
+}

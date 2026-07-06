@@ -1,8 +1,8 @@
 import annotations.CardTest;
 import com.codeborne.selenide.Selenide;
 import com.github.javafaker.Faker;
+import data.DataGenerator;
 import org.junit.jupiter.api.BeforeEach;
-import page.CardFormPage;
 import page.MainPage;
 
 public class CardFormTest {
@@ -13,19 +13,11 @@ public class CardFormTest {
         Selenide.open("http://localhost:8080");
     }
 
-    //метод для выбора кнопки на основе параметра (для параметризированных тестов)
-    private CardFormPage selectTab(MainPage mainPage, String tabType) {
-        if (tabType.equals("pay")) {
-            return mainPage.selectBuyTab();
-        }
-        return mainPage.selectCreditBuyTab();
-    }
-
-    //1. Успешная покупка тура по карте: заполнение формы валидными данными, отправка, появление сообщения об успешной оплате
+    //1. Успешная покупка тура по карте: CARDNUMBER-APPROVED (заполнение формы валидными данными, отправка, появление сообщения об успешной оплате).
     @CardTest
-    void shouldSuccessWithValidData(String tabType) {
+    void shouldSuccessWithValidData(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -39,9 +31,9 @@ public class CardFormTest {
 
     //2. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение номера карты), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfCardNumberIsEmpty(String tabType) {
+    void shouldGetErrorIfCardNumberIsEmpty(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         //---пустое значение номера карты
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -53,11 +45,27 @@ public class CardFormTest {
         cardFormPage.hasErrorEmptyNumber();
     }
 
-    //3. Отказ в покупке по карте: заполнение формы невалидными данными (невалидное значение номера карты), появление сообщения об отказе.
+    //3. Отказ в покупке по карте: CARDNUMBER-DECLINED (заполнение формы невалидными данными (номер карты для отказа по ТЗ), появление сообщения об отказе).
     @CardTest
-    void shouldGetErrorIfCardNumberIsInvalid(String tabType) {
+    void shouldGetErrorIfCardNumberIsDeclined(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
+
+        cardFormPage.setCardNumber(DataGenerator.getDeclinedCardNumber()); //номер карты для отказа по ТЗ
+        cardFormPage.setMonth(DataGenerator.generateMonth());
+        cardFormPage.setYear(DataGenerator.generateYear());
+        cardFormPage.setHolderName(DataGenerator.generateName("en"));
+        cardFormPage.setCvc(DataGenerator.generateCvc());
+
+        cardFormPage.submit();
+        mainPage.hasErrorNotification();
+    }
+
+    //4. Отказ в покупке по карте: заполнение формы невалидными данными (невалидное рандомное значение номера карты), появление сообщения об отказе.
+    @CardTest
+    void shouldGetErrorIfCardNumberIsInvalid(CardTest.Type testType) {
+        var mainPage = new MainPage();
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.generateInvalidCardNumber(Faker.instance())); //невалидное значение номера карты
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -69,11 +77,11 @@ public class CardFormTest {
         mainPage.hasErrorNotification();
     }
 
-    //4. Отказ в покупке по карте: заполнение формы невалидными данными (короткий номер карты), появление сообщения об отказе.
+    //5. Отказ в покупке по карте: заполнение формы невалидными данными (короткий номер карты), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfCardNumberIsShort(String tabType) {
+    void shouldGetErrorIfCardNumberIsShort(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.generateShortCardNumber(Faker.instance())); //короткий номер карты
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -85,31 +93,31 @@ public class CardFormTest {
         cardFormPage.hasErrorInvalidFormatNumber();
     }
 
-    //5. Проверка поля CardNumber на возможность ввода спецсимволов, поле остается чистым.
+    //6. Проверка поля CardNumber на возможность ввода спецсимволов, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfCardNumberHasSpecialSymbols(String tabType) {
+    void shouldBeEmptyIfCardNumberHasSpecialSymbols(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.generateSpecialSymbols()); //спецсимволы в номере
         cardFormPage.hasEmptyNumberField();
     }
 
-    //6. Проверка поля CardNumber на возможность ввода букв, поле остается чистым.
+    //7. Проверка поля CardNumber на возможность ввода букв, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfCardNumberHasLetters(String tabType) {
+    void shouldBeEmptyIfCardNumberHasLetters(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.generateLetters()); //буквы в номере
         cardFormPage.hasEmptyNumberField();
     }
 
-    //7. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение месяца), появление сообщения об отказе.
+    //8. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение месяца), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfMonthIsEmpty(String tabType) {
+    void shouldGetErrorIfMonthIsEmpty(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         //---пустое значение месяца
@@ -121,11 +129,11 @@ public class CardFormTest {
         cardFormPage.hasErrorEmptyMonth();
     }
 
-    //8. Отказ в покупке по карте: заполнение формы невалидными данными (короткое значение месяца), появление сообщения об отказе.
+    //9. Отказ в покупке по карте: заполнение формы невалидными данными (короткое значение месяца), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfMonthIsShort(String tabType) {
+    void shouldGetErrorIfMonthIsShort(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateShortMonth()); //короткое значение месяца
@@ -137,11 +145,11 @@ public class CardFormTest {
         cardFormPage.hasErrorInvalidFormatMonth();
     }
 
-    //9. Отказ в покупке по карте: заполнение формы невалидными данными (нулевой месяц), появление сообщения об отказе.
+    //10. Отказ в покупке по карте: заполнение формы невалидными данными (нулевой месяц), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfMonthIsZero(String tabType) {
+    void shouldGetErrorIfMonthIsZero(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.getZeroMonth()); //нулевой месяц
@@ -153,11 +161,11 @@ public class CardFormTest {
         cardFormPage.hasErrorIncorrectMonth();
     }
 
-    //10. Отказ в покупке по карте: заполнение формы невалидными данными (тринадцатый месяц), появление сообщения об отказе.
+    //11. Отказ в покупке по карте: заполнение формы невалидными данными (тринадцатый месяц), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfMonthIsThirteenth(String tabType) {
+    void shouldGetErrorIfMonthIsThirteenth(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.getThirteenthMonth()); //тринадцатый месяц
@@ -169,11 +177,11 @@ public class CardFormTest {
         cardFormPage.hasErrorIncorrectMonth();
     }
 
-    //11. Отказ в покупке по карте: заполнение формы невалидными данными (прошлый месяц текущего года), появление сообщения об отказе.
+    //12. Отказ в покупке по карте: заполнение формы невалидными данными (прошлый месяц текущего года), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfMonthIsPast(String tabType) {
+    void shouldGetErrorIfMonthIsPast(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generatePastMonth()); //прошлый месяц
@@ -185,31 +193,31 @@ public class CardFormTest {
         cardFormPage.hasErrorIncorrectMonth();
     }
 
-    //12. Проверка поля Month на возможность ввода спецсимволов, поле остается чистым.
+    //13. Проверка поля Month на возможность ввода спецсимволов, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfMonthHasSpecialSymbols(String tabType) {
+    void shouldBeEmptyIfMonthHasSpecialSymbols(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setMonth(DataGenerator.generateSpecialSymbols()); //спецсимволы в месяце
         cardFormPage.hasEmptyMonthField();
     }
 
-    //13. Проверка поля Month на возможность ввода букв, поле остается чистым.
+    //14. Проверка поля Month на возможность ввода букв, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfMonthHasLetters(String tabType) {
+    void shouldBeEmptyIfMonthHasLetters(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setMonth(DataGenerator.generateLetters()); //буквы в месяце
         cardFormPage.hasEmptyMonthField();
     }
 
-    //14. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение года), появление сообщения об отказе.
+    //15. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение года), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfYeaIsEmpty(String tabType) {
+    void shouldGetErrorIfYeaIsEmpty(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -221,11 +229,11 @@ public class CardFormTest {
         cardFormPage.hasErrorEmptyYear();
     }
 
-    //15. Отказ в покупке по карте: заполнение формы невалидными данными (короткое значение года), появление сообщения об отказе.
+    //16. Отказ в покупке по карте: заполнение формы невалидными данными (короткое значение года), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfYearIsShort(String tabType) {
+    void shouldGetErrorIfYearIsShort(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -237,11 +245,11 @@ public class CardFormTest {
         cardFormPage.hasErrorInvalidFormatYear();
     }
 
-    //16. Отказ в покупке по карте: заполнение формы невалидными данными (прошлый год), появление сообщения об отказе.
+    //17. Отказ в покупке по карте: заполнение формы невалидными данными (прошлый год), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfYeaIsPast(String tabType) {
+    void shouldGetErrorIfYeaIsPast(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -253,11 +261,11 @@ public class CardFormTest {
         cardFormPage.hasErrorPastYear();
     }
 
-    //17. Отказ в покупке по карте: заполнение формы невалидными данными (указан год более 5 лет), появление сообщения об отказе.
+    //18. Отказ в покупке по карте: заполнение формы невалидными данными (указан год более 5 лет), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfYearIsMoreFive(String tabType) {
+    void shouldGetErrorIfYearIsMoreFive(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -269,31 +277,31 @@ public class CardFormTest {
         cardFormPage.hasErrorIncorrectYear();
     }
 
-    //18. Проверка поля Year на возможность ввода спецсимволов, поле остается чистым.
+    //19. Проверка поля Year на возможность ввода спецсимволов, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfYearHasSpecialSymbols(String tabType) {
+    void shouldBeEmptyIfYearHasSpecialSymbols(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setYear(DataGenerator.generateSpecialSymbols()); //спецсимволы в поле года
         cardFormPage.hasEmptyYearField();
     }
 
-    //19. Проверка поля Year на возможность ввода букв, поле остается чистым.
+    //20. Проверка поля Year на возможность ввода букв, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfYearHasLetters(String tabType) {
+    void shouldBeEmptyIfYearHasLetters(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setYear(DataGenerator.generateLetters()); //буквы в поле года
         cardFormPage.hasEmptyYearField();
     }
 
-    //20. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение имени), появление сообщения об отказе.
+    //21. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение имени), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfNameIsEmpty(String tabType) {
+    void shouldGetErrorIfNameIsEmpty(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -305,11 +313,11 @@ public class CardFormTest {
         cardFormPage.hasErrorEmptyName();
     }
 
-    //21. Отказ в покупке по карте: заполнение формы невалидными данными (имя на русском языке), появление сообщения об отказе.
+    //22. Отказ в покупке по карте: заполнение формы невалидными данными (имя на русском языке), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfNameIsRu(String tabType) {
+    void shouldGetErrorIfNameIsRu(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -321,31 +329,31 @@ public class CardFormTest {
         cardFormPage.hasErrorInvalidFormatName();
     }
 
-    //22. Проверка поля Name на возможность ввода спецсимволов, поле остается чистым.
+    //23. Проверка поля Name на возможность ввода спецсимволов, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfNameHasSpecialSymbols(String tabType) {
+    void shouldBeEmptyIfNameHasSpecialSymbols(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setHolderName(DataGenerator.generateSpecialSymbols()); //спецсимволы в имени
         cardFormPage.hasEmptyNameField();
     }
 
-    //23. Проверка поля Name на возможность ввода цифр, поле остается чистым.
+    //24. Проверка поля Name на возможность ввода цифр, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfNameHasNumeric(String tabType) {
+    void shouldBeEmptyIfNameHasNumeric(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setHolderName(DataGenerator.generateNumericName(Faker.instance())); //цифры в имени
         cardFormPage.hasEmptyNameField();
     }
 
-    //24. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение CVC), появление сообщения об отказе.
+    //25. Отказ в покупке по карте: заполнение формы невалидными данными (пустое значение CVC), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfCvcIsEmpty(String tabType) {
+    void shouldGetErrorIfCvcIsEmpty(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -357,11 +365,11 @@ public class CardFormTest {
         cardFormPage.hasErrorEmptyCvc();
     }
 
-    //25. Отказ в покупке по карте: заполнение формы невалидными данными (двузначное число в CVC), появление сообщения об отказе.
+    //26. Отказ в покупке по карте: заполнение формы невалидными данными (двузначное число в CVC), появление сообщения об отказе.
     @CardTest
-    void shouldGetErrorIfCvcIsShort(String tabType) {
+    void shouldGetErrorIfCvcIsShort(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCardNumber(DataGenerator.getApprovedCardNumber());
         cardFormPage.setMonth(DataGenerator.generateMonth());
@@ -373,23 +381,24 @@ public class CardFormTest {
         cardFormPage.hasErrorInvalidFormatCvc();
     }
 
-    //26. Проверка поля Cvc на возможность ввода спецсимволов, поле остается чистым.
+    //27. Проверка поля Cvc на возможность ввода спецсимволов, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfCvcHasSpecialSymbols(String tabType) {
+    void shouldBeEmptyIfCvcHasSpecialSymbols(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCvc(DataGenerator.generateSpecialSymbols()); //спецсимволы в CVC
         cardFormPage.hasEmptyCvcField();
     }
 
-    //27. Проверка поля Cvc на возможность ввода букв, поле остается чистым.
+    //28. Проверка поля Cvc на возможность ввода букв, поле остается чистым.
     @CardTest
-    void shouldBeEmptyIfCvcHasLetters(String tabType) {
+    void shouldBeEmptyIfCvcHasLetters(CardTest.Type testType) {
         var mainPage = new MainPage();
-        var cardFormPage = selectTab(mainPage, tabType); //автоматически выбирать нужную вкладку
+        var cardFormPage = mainPage.selectTab(testType); //автоматически выбирать нужную вкладку
 
         cardFormPage.setCvc(DataGenerator.generateLetters()); //буквы в CVC
         cardFormPage.hasEmptyCvcField();
     }
+
 }

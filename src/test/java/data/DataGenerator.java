@@ -1,3 +1,5 @@
+package data;
+
 import com.github.javafaker.Faker;
 
 import java.time.LocalDate;
@@ -6,6 +8,7 @@ import java.util.Locale;
 import java.util.Random;
 
 public class DataGenerator {
+
     private DataGenerator() {
     }
 
@@ -14,10 +17,10 @@ public class DataGenerator {
         return "4444 4444 4444 4441";
     }
 
-//    //создаем переменную CARDNUMBER-DECLINED - номер карты для отказа
-//    public static String getDeclinedCardNumber() {
-//        return "4444 4444 4444 4442";
-//    }
+    //создаем переменную CARDNUMBER-DECLINED - номер карты для отказа
+    public static String getDeclinedCardNumber() {
+        return "4444 4444 4444 4442";
+    }
 
     //генерируем переменную invalidCARDNUMBER
     public static String generateInvalidCardNumber(Faker faker) {
@@ -56,7 +59,7 @@ public class DataGenerator {
         return LocalDate.now().minusMonths(1).format(DateTimeFormatter.ofPattern("MM"));
     }
 
-    //создаем переменную YEAR-сurrent (текущий год)
+    //создаем переменную YEAR-current (текущий год)
     public static String getCurrentYear() {
         return String.format("%02d", LocalDate.now().getYear() % 100);
     }
@@ -116,9 +119,10 @@ public class DataGenerator {
         return faker.regexify("[!@#$%^&*()_+={}\\[\\]:;\"'<>,.?/~`|\\\\-]{2}");
     }
 
-    //генерируем переменную LETTERS (двe латинские буквы)
+    //генерируем переменную LETTERS (две латинские буквы)
     public static String generateLetters() {
         Faker faker = new Faker();
         return faker.letterify("??");
     }
+
 }

@@ -1,13 +1,31 @@
 services:
+#1. Контейнер СУБД MySQL
   mysqldb:
     image: mysql:latest
     ports:
       - '3306:3306'
+#    volumes:
+#      - ./data/mysql:/var/lib/mysql
+#      - ./init:/docker-entrypoint-initdb.d
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=yes
       - MYSQL_DATABASE=app
       - MYSQL_USER=app
       - MYSQL_PASSWORD=pass
+
+# 2. Контейнер СУБД PostgreSQL
+  postgresdb:
+    image: postgres:15-alpine
+    ports:
+        - '5432:5432'
+#    volumes:
+#        - ./data/postgres:/var/lib/postgresql/data
+    environment:
+        - POSTGRES_DB=app
+        - POSTGRES_USER=app
+        - POSTGRES_PASSWORD=pass
+
+# 3. Контейнер эмулятора банковских сервисов Node.js
   node:
     image: node:alpine
     ports:

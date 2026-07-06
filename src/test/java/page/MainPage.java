@@ -1,5 +1,6 @@
 package page;
 
+import annotations.CardTest;
 import com.codeborne.selenide.SelenideElement;
 
 import java.time.Duration;
@@ -49,6 +50,13 @@ public class MainPage {
         return cartFormPage;
     }
 
+    public CardFormPage selectTab(CardTest.Type testType) {
+        return switch (testType) {
+            case PAY -> selectBuyTab();
+            case CREDIT -> selectCreditBuyTab();
+        };
+    }
+
     public void hasSuccessNotification() {
         successNotification
                 .shouldBe(visible, Duration.ofSeconds(15))
@@ -60,4 +68,5 @@ public class MainPage {
                 .shouldBe(visible, Duration.ofSeconds(15))
                 .shouldHave(text("Ошибка"), text("Ошибка! Банк отказал в проведении операции."));
     }
+
 }

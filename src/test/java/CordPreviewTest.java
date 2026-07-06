@@ -17,4 +17,5 @@ public class CordPreviewTest {
 
         previewPage.validatedDefaults(); //запускаем проверку всех исходных картинок и текстов (Марракэш, Сказочный Восток, мили, проценты и цена)
     }
+
 }

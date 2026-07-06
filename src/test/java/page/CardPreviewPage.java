@@ -8,6 +8,7 @@ import static com.codeborne.selenide.Selenide.$;
 
 //находим элементы поля с картинкой, проверяем их видимость и содержание надписей
 public class CardPreviewPage {
+
     private final SelenideElement root = $(".Order_cardPreview__47B2k");
 
     private final SelenideElement picture = root.$("div > div:nth-child(1) > img");
@@ -54,4 +55,5 @@ public class CardPreviewPage {
         hasPercents("До 7% на остаток по счёту");
         hasPrice("Всего 45 000 руб.!");
     }
+
 }
