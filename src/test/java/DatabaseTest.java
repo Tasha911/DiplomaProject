@@ -13,6 +13,7 @@ public class DatabaseTest {
     @BeforeEach
     void setUpEach() {
         Selenide.open("http://localhost:8080");
+        DatabaseHelper.cleanDatabase();
     }
 
     @AfterEach
