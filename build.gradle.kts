@@ -1,5 +1,7 @@
 plugins {
     id("java")
+    id("com.github.psxpaul.execfork") version "0.2.2"
+    id("com.avast.gradle.docker-compose") version "0.17.21"
     id("io.qameta.allure") version "4.0.1" //подключает плагин Allure к сборщику Gradle
 }
 
@@ -8,6 +10,14 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+dockerCompose {
+    useComposeFiles.set(listOf("docker-compose.yml"))
+    stopContainers.set(true)
+    waitForTcpPorts.set(true)
+
+    setProjectName("diplomaproject")
 }
 
 val allureVersion = "2.34.0"
@@ -38,7 +48,7 @@ dependencies {
 
     testImplementation("com.zaxxer:HikariCP:7.0.2")
     testImplementation("mysql:mysql-connector-java:8.0.33") //JDBC-драйвер для базы данных MySQL - это «переводчик», который позволяет Java-коду общаться с базой данных MySQL. Без него тесты физически не смогут подключиться к контейнеру MySQL, чтобы проверить, сохранилась ли запись о покупке тура.
-    testImplementation ("org.postgresql:postgresql:42.7.1") //JDBC-драйвер для базы данных PostgreSQL - это «переводчик», который позволяет Java-коду общаться с базой данных PostgreSQL. Без него тесты физически не смогут подключиться к контейнеру PostgreSQL, чтобы проверить, сохранилась ли запись о покупке тура.
+    testImplementation("org.postgresql:postgresql:42.7.1") //JDBC-драйвер для базы данных PostgreSQL - это «переводчик», который позволяет Java-коду общаться с базой данных PostgreSQL. Без него тесты физически не смогут подключиться к контейнеру PostgreSQL, чтобы проверить, сохранилась ли запись о покупке тура.
     testImplementation("commons-dbutils:commons-dbutils:1.8.1") //библиотека-утилита от Apache для упрощения работы с SQL, заменяет тяжеловесные ORM (вроде Hibernate), берет на себя рутину: сама открывает и закрывает соединения с БД, выполняет SQL-запросы (SELECT * FROM payment_entity...) и автоматически превращает строчки из базы данных в удобные Java-объекты.
 
     testImplementation("io.qameta.allure:allure-selenide:$allureVersion") //плагин-интеграция между фреймворком Allure и браузерным движком Selenide - этот модуль «следит» за действиями Selenide в браузере и если какой-то тест упадет (например, не появилась кнопка или пришла ошибка), этот плагин автоматически сделает скриншот страницы, запишет исходный код HTML и прикрепит их к отчету Allure.
@@ -47,6 +57,53 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 
+    systemProperty("selenide.headless", System.getProperty("selenide.headless"))
+    systemProperty(             //отключает менеджер паролей, для того, что бы он не мешал при тестировании
+        "chromeoptions.prefs",
+        System.getProperty("chromeoptions.prefs", "profile.password_manager_leak_detection=false")
+    )
+}
+
+fun getDbUrl(): String = project
+    .findProperty("db.url")
+    ?.toString()
+    .orEmpty()
+    .ifBlank { "jdbc:mysql://localhost:3306/app?allowMultiQueries=true" } // default mysql
+
+tasks.register<com.github.psxpaul.task.JavaExecFork>("startAqaShop") {
+    description = "Запускает aqa-shop.jar."
+
+    dependsOn("composeUp")
+
+    val jarDir = file("${projectDir}/artifacts/aqashop/")
+    val jarPath = "${jarDir.absolutePath}/aqa-shop.jar"
+
+    classpath = files(jarPath)
+    main = "org.springframework.boot.loader.JarLauncher"
+    args = mutableListOf("--spring.datasource.url=${getDbUrl()}")
+    workingDir = jarDir
+    waitForPort = 8080
+    waitForOutput = "Started ShopApplication"
+    timeout = 20
+}
+
+tasks.register<Test>("runTests") {
+    group = "verification"
+    description = "Запускает Docker, aqa-shop.jar и прогоняет тесты."
+
+    dependsOn("startAqaShop")
+    finalizedBy("composeDown")
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+
+    useJUnitPlatform()
+    outputs.upToDateWhen { false }
+
+    val dbUrl = getDbUrl()
+    println("Database url: $dbUrl")
+
+    systemProperty("test.db.url", getDbUrl());
     systemProperty("selenide.headless", System.getProperty("selenide.headless"))
     systemProperty(             //отключает менеджер паролей, для того, что бы он не мешал при тестировании
         "chromeoptions.prefs",

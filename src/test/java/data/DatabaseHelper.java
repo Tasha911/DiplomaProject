@@ -13,8 +13,7 @@ import javax.sql.DataSource;
 
 public class DatabaseHelper {
 
-    private static final String DATABASE_URL = "jdbc:mysql://localhost:3306/app?allowMultiQueries=true";
-//    private static final String DATABASE_URL = "jdbc:postgresql://localhost:5432/app";
+    private static final String DEFAULT_DATABASE_URL = "jdbc:mysql://localhost:3306/app?allowMultiQueries=true";
     private static final String DATABASE_USER = "app";
     private static final String DATABASE_PASSWORD = "pass";
 
@@ -61,7 +60,10 @@ public class DatabaseHelper {
     private static DataSource initDataSource() {
         HikariConfig config = new HikariConfig();
 
-        config.setJdbcUrl(DATABASE_URL);
+        var dbUrl = System.getProperty("test.db.url");
+        dbUrl = (dbUrl == null || dbUrl.isBlank()) ? DEFAULT_DATABASE_URL : dbUrl;
+
+        config.setJdbcUrl(dbUrl);
         config.setUsername(DATABASE_USER);
         config.setPassword(DATABASE_PASSWORD);
 
